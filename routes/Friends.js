@@ -42,20 +42,36 @@ router.delete('/transaction/:id', async (req, res) => {
       return res.status(404).json({ message: 'Transaction not found' });
     }
 
-    // Step 2: Filter out the transaction by id
+    // Step 2: Find the specific transaction
+    const transaction = friend.transactions.find(
+      txn => txn._id.toString() === req.params.id
+    );
+
+    if (!transaction) {
+      return res.status(404).json({ message: 'Transaction not found' });
+    }
+
+    // Step 3: Subtract transaction amount from balance
+    friend.balance -= transaction.amount;
+
+    // Step 4: Remove the transaction
     friend.transactions = friend.transactions.filter(
       txn => txn._id.toString() !== req.params.id
     );
 
-    // Step 3: Save updated Friend document
+    // Step 5: Save updated Friend document
     await friend.save();
 
-    res.status(200).json({ message: 'Transaction deleted successfully' });
+    res.status(200).json({ 
+      message: 'Transaction deleted successfully', 
+      updatedBalance: friend.balance 
+    });
   } catch (error) {
     console.error('Error deleting transaction:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 
 module.exports = router;
