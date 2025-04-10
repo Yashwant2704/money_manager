@@ -10,8 +10,9 @@ router.get('/', async (req, res) => {
 
 // Add a new friend
 router.post('/add', async (req, res) => {
-  const { name } = req.body;
-  const newFriend = new Friend({ name });
+  const { name, mail } = req.body;
+  console.log(name, mail);
+  const newFriend = new Friend({ name, mail });
   await newFriend.save();
   res.json(newFriend);
 });

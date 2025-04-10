@@ -8,6 +8,7 @@ const transactionSchema = new mongoose.Schema({
 
 const friendSchema = new mongoose.Schema({
   name: String,
+  mail: String,
   balance: { type: Number, default: 0 },
   transactions: [transactionSchema],
 });
