@@ -73,6 +73,38 @@ router.delete('/transaction/:id', async (req, res) => {
   }
 });
 
+router.put('/transaction/:id', async (req, res) => {
+  try {
+    console.log('Request body:', req.body);
+
+    const friend = await Friend.findOne({ 'transactions._id': req.params.id });
+    if (!friend) {
+      return res.status(404).json({ message: 'Transaction not found' });
+    }
+
+    const txn = friend.transactions.id(req.params.id);
+    if (!txn) {
+      return res.status(404).json({ message: 'Transaction not found' });
+    }
+
+    if (req.body.amount !== undefined) {
+      friend.balance = friend.balance - txn.amount + req.body.amount;
+      txn.amount = req.body.amount;
+    }
+    if (req.body.note !== undefined) txn.note = req.body.note;
+    if (req.body.date !== undefined) txn.date = new Date(req.body.date);
+
+    console.log('Updated transaction:', txn);
+
+    await friend.save();
+
+    res.json(txn);
+  } catch (error) {
+    console.error('Error updating transaction:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 
 module.exports = router;
