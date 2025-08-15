@@ -1,18 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const Friend = require('../models/Friend');
+const auth = require('../middleware/auth');
 
-// Get all friends
+// Protect all routes!
+router.use(auth);
+
+// Get all friends (of one user)
 router.get('/', async (req, res) => {
-  const friends = await Friend.find();
+  const friends = await Friend.find({ user: req.user.id });
   res.json(friends);
 });
 
 // Add a new friend
 router.post('/add', async (req, res) => {
   const { name, mail } = req.body;
-  console.log(name, mail);
-  const newFriend = new Friend({ name, mail });
+  const newFriend = new Friend({ name, mail, user: req.user.id });
   await newFriend.save();
   res.json(newFriend);
 });
@@ -20,7 +23,8 @@ router.post('/add', async (req, res) => {
 // Add/Subtract Money
 router.post('/transaction/:id', async (req, res) => {
   const { amount, note } = req.body;
-  const friend = await Friend.findById(req.params.id);
+  const friend = await Friend.findOne({ _id: req.params.id, user: req.user.id });
+  if (!friend) return res.status(404).json({ message: 'Friend not found' });
   friend.balance += amount;
   friend.transactions.push({ amount, note });
   await friend.save();
@@ -29,63 +33,33 @@ router.post('/transaction/:id', async (req, res) => {
 
 // View transaction details
 router.get('/transaction/:id', async (req, res) => {
-  const friend = await Friend.findOne({ 'transactions._id': req.params.id });
+  const friend = await Friend.findOne({ 'transactions._id': req.params.id, user: req.user.id });
+  if (!friend) return res.status(404).json({ message: 'Transaction not found' });
   const transaction = friend.transactions.id(req.params.id);
   res.json(transaction);
 });
 
 router.delete('/transaction/:id', async (req, res) => {
   try {
-    // Step 1: Find the Friend containing the transaction
-    const friend = await Friend.findOne({ 'transactions._id': req.params.id });
-
-    if (!friend) {
-      return res.status(404).json({ message: 'Transaction not found' });
-    }
-
-    // Step 2: Find the specific transaction
-    const transaction = friend.transactions.find(
-      txn => txn._id.toString() === req.params.id
-    );
-
-    if (!transaction) {
-      return res.status(404).json({ message: 'Transaction not found' });
-    }
-
-    // Step 3: Subtract transaction amount from balance
+    const friend = await Friend.findOne({ 'transactions._id': req.params.id, user: req.user.id });
+    if (!friend) return res.status(404).json({ message: 'Transaction not found' });
+    const transaction = friend.transactions.id(req.params.id);
+    if (!transaction) return res.status(404).json({ message: 'Transaction not found' });
     friend.balance -= transaction.amount;
-
-    // Step 4: Remove the transaction
-    friend.transactions = friend.transactions.filter(
-      txn => txn._id.toString() !== req.params.id
-    );
-
-    // Step 5: Save updated Friend document
+    transaction.remove();
     await friend.save();
-
-    res.status(200).json({ 
-      message: 'Transaction deleted successfully', 
-      updatedBalance: friend.balance 
-    });
+    res.json({ message: 'Transaction deleted', updatedBalance: friend.balance });
   } catch (error) {
-    console.error('Error deleting transaction:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 router.put('/transaction/:id', async (req, res) => {
   try {
-    console.log('Request body:', req.body);
-
-    const friend = await Friend.findOne({ 'transactions._id': req.params.id });
-    if (!friend) {
-      return res.status(404).json({ message: 'Transaction not found' });
-    }
-
+    const friend = await Friend.findOne({ 'transactions._id': req.params.id, user: req.user.id });
+    if (!friend) return res.status(404).json({ message: 'Transaction not found' });
     const txn = friend.transactions.id(req.params.id);
-    if (!txn) {
-      return res.status(404).json({ message: 'Transaction not found' });
-    }
+    if (!txn) return res.status(404).json({ message: 'Transaction not found' });
 
     if (req.body.amount !== undefined) {
       friend.balance = friend.balance - txn.amount + req.body.amount;
@@ -94,17 +68,11 @@ router.put('/transaction/:id', async (req, res) => {
     if (req.body.note !== undefined) txn.note = req.body.note;
     if (req.body.date !== undefined) txn.date = new Date(req.body.date);
 
-    console.log('Updated transaction:', txn);
-
     await friend.save();
-
     res.json(txn);
   } catch (error) {
-    console.error('Error updating transaction:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
-
-
 
 module.exports = router;
