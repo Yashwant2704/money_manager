@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Friend = require('../models/Friend');
 const auth = require('../middleware/auth');
+const mongoose = require('mongoose');
 
 // Protect all routes!
 router.use(auth);
@@ -41,15 +42,22 @@ router.get('/transaction/:id', async (req, res) => {
 
 router.delete('/transaction/:id', async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid transaction ID' });
+    }
     const friend = await Friend.findOne({ 'transactions._id': req.params.id, user: req.user.id });
     if (!friend) return res.status(404).json({ message: 'Transaction not found' });
     const transaction = friend.transactions.id(req.params.id);
     if (!transaction) return res.status(404).json({ message: 'Transaction not found' });
     friend.balance -= transaction.amount;
-    transaction.remove();
+    friend.transactions = friend.transactions.filter(
+      txn => String(txn._id) !== String(req.params.id)
+    );
     await friend.save();
+
     res.json({ message: 'Transaction deleted', updatedBalance: friend.balance });
   } catch (error) {
+    console.error("Delete transaction error:", error);
     res.status(500).json({ message: 'Server error' });
   }
 });
