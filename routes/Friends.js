@@ -12,6 +12,79 @@ router.get('/', async (req, res) => {
   const friends = await Friend.find({ user: req.user.id });
   res.json(friends);
 });
+
+
+
+// POST /split - Create split transactions for multiple friends
+router.post('/transaction/split', async (req, res) => {
+  try {
+    const { totalAmount, note, selectedFriends } = req.body;
+    
+    if (!totalAmount || !selectedFriends || selectedFriends.length === 0) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Validate friends belong to user
+    const friendIds = selectedFriends.map(sf => sf.friendId);
+    const friends = await Friend.find({
+      _id: { $in: friendIds },
+      user: req.user.id
+    });
+
+    if (friends.length !== friendIds.length) {
+      return res.status(400).json({ message: 'Invalid friends selected' });
+    }
+
+    // Calculate split amount per person (including user)
+    const numberOfPeople = selectedFriends.length + 1; // +1 for the user
+    const amountPerPerson = Math.round((totalAmount / numberOfPeople) * 100) / 100;
+
+    // Create a list of friend names for the note
+    const friendNames = selectedFriends.map(sf => sf.name).join(', ');
+
+    // Update each friend's balance and add transaction
+    const updatedFriends = [];
+    
+    for (const selectedFriend of selectedFriends) {
+      const friend = await Friend.findById(selectedFriend.friendId);
+      
+      // Update friend's balance (they owe you this amount)
+      friend.balance = Math.round((friend.balance + amountPerPerson) * 100) / 100;
+      
+      // Add transaction to friend's transaction array with proper note
+      friend.transactions.push({
+        amount: amountPerPerson,
+        note: `${note} - Split between ${friendNames} and me`,
+        date: new Date()
+      });
+      
+      await friend.save();
+      updatedFriends.push(friend);
+    }
+
+    res.status(201).json({
+      message: `Split transaction created for ${numberOfPeople} people`,
+      updatedFriends,
+      splitDetails: {
+        totalAmount,
+        amountPerPerson,
+        numberOfPeople,
+        friendsInvolved: selectedFriends.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Split transaction error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+
+
+
+
+
 // Get one friend by id
 router.get('/:id', async (req, res) => {
   try {
