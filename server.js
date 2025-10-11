@@ -15,9 +15,14 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 // Auth and friends routes
 const friendRoutes = require('./routes/Friends');
 const authRoutes = require('./routes/auth');
+const adminFriendsRoutes = require('./routes/AdminFriends');
+const adminImpersonationRoutes = require('./routes/AdminImpersonation');
 
 app.use('/api/friends', friendRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminFriendsRoutes);
+app.use('/api/admin', require('./routes/AdminUsers'));
+app.use('/api/admin', adminImpersonationRoutes);
 
 const emailRoute = require("./routes/email");
 app.use("/api/email", emailRoute);

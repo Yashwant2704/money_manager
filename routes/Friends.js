@@ -12,6 +12,18 @@ router.get('/', async (req, res) => {
   const friends = await Friend.find({ user: req.user.id });
   res.json(friends);
 });
+// Get one friend by id
+router.get('/:id', async (req, res) => {
+  try {
+    const friend = await Friend.findOne({ _id: req.params.id, user: req.user.id })
+      .populate('user', 'username email'); // Populate user with selected fields
+    if (!friend) return res.status(404).json({ message: 'Friend not found' });
+    res.json(friend);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 // Add a new friend
 router.post('/add', async (req, res) => {
