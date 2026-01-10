@@ -17,12 +17,14 @@ const friendRoutes = require('./routes/Friends');
 const authRoutes = require('./routes/auth');
 const adminFriendsRoutes = require('./routes/AdminFriends');
 const adminImpersonationRoutes = require('./routes/AdminImpersonation');
+const passwordResetRoutes = require('./routes/passwordReset');
 
 app.use('/api/friends', friendRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminFriendsRoutes);
 app.use('/api/admin', require('./routes/AdminUsers'));
 app.use('/api/admin', adminImpersonationRoutes);
+app.use('/api/password-reset', passwordResetRoutes);
 
 const emailRoute = require("./routes/email");
 app.use("/api/email", emailRoute);
