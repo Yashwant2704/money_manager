@@ -4,7 +4,7 @@ const router = express.Router();
 require("dotenv").config();
 
 router.post("/", async (req, res) => {
-  const { friend } = req.body;
+  const { friend, user } = req.body;
 
   if (!friend || friend.balance <= 0) {
     return res.status(400).json({ message: "No balance to send email." });
@@ -42,12 +42,12 @@ router.post("/", async (req, res) => {
             .join("")}
         </tbody>
       </table>
-      <p style="margin-top: 30px; font-size: 16px;">
-        You can make payment on the following QR code:
+      <p style="margin-top:20px;">
+        Regards,<br/>
+        <strong>${user.name}</strong><br/>
+        <small>via YMoneyManager</small>
       </p>
-      <img src="https://ymoneymanager.netlify.app/assets/qr_mbk-CF6XJabd.png" alt="QR Code" style="width: 100%; max-width: 300px; margin: 20px 0;" />
-      <p style="font-size: 16px; margin-top: 20px;">Regards,<br/><strong>Yashwant</strong></p>
-    </div>
+      </div>
   `;
 
   try {
@@ -81,7 +81,7 @@ router.post("/", async (req, res) => {
 
 
 router.post("/selected", async (req, res) => {
-  const { friend, selectedTransactions } = req.body;
+  const { friend, selectedTransactions, user } = req.body;
 
   if (!friend || !selectedTransactions || selectedTransactions.length === 0) {
     return res.status(400).json({ message: "No selected transactions to send email." });
@@ -122,11 +122,11 @@ router.post("/selected", async (req, res) => {
             .join("")}
         </tbody>
       </table>
-      <p style="margin-top: 30px; font-size: 16px;">
-        You can make payment on the following QR code:
+      <p style="margin-top:20px;">
+        Regards,<br/>
+        <strong>${user.name}</strong><br/>
+        <small>via YMoneyManager</small>
       </p>
-      <img src="https://ymoneymanager.netlify.app/assets/qr_mbk-CF6XJabd.png" alt="QR Code" style="width: 100%; max-width: 300px; margin: 20px 0;" />
-      <p style="font-size: 16px; margin-top: 20px;">Regards,<br/><strong>Yashwant</strong></p>
     </div>
   `;
 
