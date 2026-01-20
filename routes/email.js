@@ -5,6 +5,12 @@ require("dotenv").config();
 
 router.post("/", async (req, res) => {
   const { friend, user } = req.body;
+  const QrUrl = "upi://pay?pa=7350998157@upi&pn=Yashwant%20Nagarkar";
+  const upiQrData = `${QrUrl}&am=${friend.balance}&tn=Yashwant%20Settle`;
+
+  const qrImageUrl =
+    "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
+    encodeURIComponent(upiQrData);
 
   if (!friend || friend.balance <= 0) {
     return res.status(400).json({ message: "No balance to send email." });
@@ -42,6 +48,22 @@ router.post("/", async (req, res) => {
             .join("")}
         </tbody>
       </table>
+      <div style="margin: 25px 0; text-align: center;">
+  <p style="font-size: 15px; margin-bottom: 10px;">
+    Scan to pay via UPI
+  </p>
+  <img
+    src="${qrImageUrl}"
+    alt="UPI QR Code"
+    width="200"
+    height="200"
+    style="border: 1px solid #ddd; border-radius: 8px;"
+  />
+  <p style="font-size: 12px; color: #666; margin-top: 8px;">
+    Works with Google Pay, PhonePe, Paytm, BHIM
+  </p>
+</div>
+
       <p style="margin-top:20px;">
         Regards,<br/>
         <strong>${user.name}</strong><br/>
@@ -82,6 +104,12 @@ router.post("/", async (req, res) => {
 
 router.post("/selected", async (req, res) => {
   const { friend, selectedTransactions, user } = req.body;
+  const QrUrl = "upi://pay?pa=7350998157@upi&pn=Yashwant%20Nagarkar";
+  const upiQrData = `${QrUrl}&am=${friend.balance}&tn=Yashwant%20Settle`;
+
+  const qrImageUrl =
+    "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
+    encodeURIComponent(upiQrData);
 
   if (!friend || !selectedTransactions || selectedTransactions.length === 0) {
     return res.status(400).json({ message: "No selected transactions to send email." });
@@ -122,6 +150,22 @@ router.post("/selected", async (req, res) => {
             .join("")}
         </tbody>
       </table>
+      <div style="margin: 25px 0; text-align: center;">
+  <p style="font-size: 15px; margin-bottom: 10px;">
+    Scan to pay via UPI
+  </p>
+  <img
+    src="${qrImageUrl}"
+    alt="UPI QR Code"
+    width="200"
+    height="200"
+    style="border: 1px solid #ddd; border-radius: 8px;"
+  />
+  <p style="font-size: 12px; color: #666; margin-top: 8px;">
+    Works with Google Pay, PhonePe, Paytm, BHIM
+  </p>
+</div>
+
       <p style="margin-top:20px;">
         Regards,<br/>
         <strong>${user.name}</strong><br/>
