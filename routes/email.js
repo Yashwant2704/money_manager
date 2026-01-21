@@ -6,7 +6,7 @@ require("dotenv").config();
 router.post("/", async (req, res) => {
   const { friend, user } = req.body;
   const QrUrl = "upi://pay?pa=7350998157@upi&pn=Yashwant%20Nagarkar";
-  const upiQrData = `${QrUrl}&am=${friend.balance}&tn=Yashwant%20Settle`;
+  const upiQrData = `${QrUrl}&am=${friend.balance}&tn=${friend.name}%20Settle`;
 
   const qrImageUrl =
     "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
