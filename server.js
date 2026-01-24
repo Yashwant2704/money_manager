@@ -25,6 +25,8 @@ app.use('/api/admin', adminFriendsRoutes);
 app.use('/api/admin', require('./routes/AdminUsers'));
 app.use('/api/admin', adminImpersonationRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
+const payRoutes = require("./routes/pay");
+app.use("/api", payRoutes);
 
 const emailRoute = require("./routes/email");
 app.use("/api/email", emailRoute);
