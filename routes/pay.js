@@ -1,64 +1,95 @@
 const express = require("express");
+const crypto = require("crypto");
 const router = express.Router();
 
-/**
- * Helpers
- */
+const SECRET = process.env.UPI_SIGN_SECRET;
 
-// allow only alphabets, single word
-const sanitizePayeeName = (name) => {
-  if (!name) return "Yashwant";
-  return name
-    .replace(/[^a-zA-Z]/g, "")   // remove spaces, numbers, symbols
-    .substring(0, 20);           // safety cap
+// ---------- helpers ----------
+const sanitizePayeeName = () => "Yashwant";
+const sanitizeTxnNote = () => "Payment";
+
+const verifySignature = ({ amount, ts, sig }) => {
+  const payload = `${amount}|${ts}`;
+
+  const expected = crypto
+    .createHmac("sha256", SECRET)
+    .update(payload)
+    .digest("hex");
+
+  const match = crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(sig)
+  );
+
+  console.log("[PAY] Signature check:", match ? "VALID" : "INVALID");
+
+  return match;
 };
 
-// strict-safe transaction note
-const sanitizeTxnNote = () => {
-  return "Payment"; // safest across all banks & wallets
-};
+const isIOS = (ua = "") => /iphone|ipad|ipod/i.test(ua);
 
-// detect wallet UPI (Mobikwik, Amazon Pay, etc.)
-const isWalletUpi = (ua = "") => {
-  const walletKeywords = [
-    "mobikwik",
-    "amazon",
-    "freecharge",
-    "payzapp",
-    "wallet"
-  ];
-  ua = ua.toLowerCase();
-  return walletKeywords.some(k => ua.includes(k));
-};
-
+// ---------- route ----------
 router.get("/pay", (req, res) => {
-  const { amount, name } = req.query;
+  console.log("--------------------------------------------------");
+  console.log("[PAY] Incoming request");
 
-  if (!amount || isNaN(amount) || Number(amount) <= 0) {
-    return res.status(400).send("Invalid amount");
+  const { amount, ts, sig } = req.query;
+
+  console.log("[PAY] Query params:", { amount, ts, sig });
+  console.log("[PAY] User-Agent:", req.headers["user-agent"]);
+
+  // 1️⃣ basic validation
+  if (!amount || !ts || !sig || isNaN(amount) || Number(amount) <= 0) {
+    console.log("[PAY] ❌ Invalid request params");
+    return res.status(400).send("Invalid request");
   }
 
-  const userAgent = req.headers["user-agent"] || "";
-  const wallet = isWalletUpi(userAgent);
+  // 2️⃣ expiry check
+  const age = Date.now() - Number(ts);
+  console.log("[PAY] Link age (ms):", age);
 
-  // 🔐 Auto-sanitized values
-  const pn = wallet
-    ? "Yashwant"                     // downgrade for wallet UPI
-    : sanitizePayeeName("Yashwant"); // bank-safe
+  if (age > 5 * 60 * 1000) {
+    console.log("[PAY] ❌ Link expired");
+    return res.status(400).send("Link expired");
+  }
 
-  const tn = sanitizeTxnNote();      // ALWAYS simple
+  // 3️⃣ signature verification
+  if (!verifySignature({ amount, ts, sig })) {
+    console.log("[PAY] ❌ Signature mismatch");
+    return res.status(403).send("Invalid signature");
+  }
 
-  const upiUrl =
+  const safeAmount = Number(amount).toFixed(2);
+
+  const upiIntent =
     `upi://pay` +
-    `?pa=7350998157@upi` +
-    `&pn=${encodeURIComponent(pn)}` +
-    `&am=${Number(amount).toFixed(2)}` +
+    `?pa=yashwantnagarkar@ibl` +
+    `&pn=${sanitizePayeeName()}` +
+    `&am=${safeAmount}` +
     `&cu=INR` +
-    `&tn=${encodeURIComponent(tn)}`;
+    `&tn=${sanitizeTxnNote()}`;
 
-  // Retry-safe redirect
+  console.log("[PAY] UPI intent generated:");
+  console.log(upiIntent);
+
   res.setHeader("Cache-Control", "no-store");
-  res.redirect(302, upiUrl);
+
+  // 4️⃣ iOS handling
+  if (isIOS(req.headers["user-agent"])) {
+    console.log("[PAY] iOS device detected → sending HTML page");
+    return res.send(`
+      <html>
+        <body style="font-family:sans-serif;text-align:center;padding:30px">
+          <h3>Tap below to open UPI app</h3>
+          <a href="${upiIntent}">Open UPI App</a>
+        </body>
+      </html>
+    `);
+  }
+
+  // 5️⃣ Android / others
+  console.log("[PAY] Non-iOS device → redirecting to UPI");
+  res.redirect(302, upiIntent);
 });
 
 module.exports = router;
