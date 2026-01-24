@@ -65,8 +65,7 @@ router.get("/pay", (req, res) => {
     `upi://pay` +
     `?pa=yashwantnagarkar@ibl` +
     `&pn=${sanitizePayeeName()}` +
-    `&am=${safeAmount}` +
-    `&cu=INR` +
+    `&am=${amount}` +
     `&tn=${sanitizeTxnNote()}`;
 
   console.log("[PAY] UPI intent generated:");
@@ -79,9 +78,9 @@ router.get("/pay", (req, res) => {
     console.log("[PAY] iOS device detected → sending HTML page");
     return res.send(`
       <html>
-        <body style="font-family:sans-serif;text-align:center;padding:30px">
+        <body style="font-family:sans-serif;text-align:center;padding:30px;font-size:2em;">
           <h3>Tap below to open UPI app</h3>
-          <a href="${upiIntent}">Open UPI App</a>
+          <a style="display:inline-block;background:#007aff;color:#fff;padding:10px;border-radius:5px;text-decoration:none;font-size:1.5em;" href="${upiIntent}">Open UPI</a>
         </body>
       </html>
     `);

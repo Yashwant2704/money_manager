@@ -27,6 +27,12 @@ app.use('/api/admin', adminImpersonationRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
 const payRoutes = require("./routes/pay");
 app.use("/api", payRoutes);
+// add once
+app.post("/api/client-log", express.json(), (req, res) => {
+  console.log("[CLIENT-LOG]", req.body);
+  res.sendStatus(204);
+});
+
 
 const emailRoute = require("./routes/email");
 app.use("/api/email", emailRoute);
