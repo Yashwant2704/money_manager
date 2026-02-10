@@ -17,60 +17,216 @@ router.post("/", async (req, res) => {
   }
 
   const htmlContent = `
-    <div style="font-family: 'Segoe UI', sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-      <h2 style="color: #7e5bef;">Hello ${friend.name},</h2>
-      <p style="font-size: 16px;">You owe me some money, so here's your account details:</p>
-      <div style="margin: 20px 0;">
-        <strong style="font-size: 18px;">Current Balance:</strong>
-        <p style="font-size: 24px; color: ${friend.balance >= 0 ? '#28a745' : '#dc3545'};">
-          ₹${friend.balance}
-        </p>
-      </div>
-      <h3 style="margin-bottom: 10px;">Details</h3>
-      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-        <thead>
-          <tr style="background-color: #f0f0f0;">
-            <th style="padding: 10px; border: 1px solid #ddd;">Date</th>
-            <th style="padding: 10px; border: 1px solid #ddd;">Amount</th>
-            <th style="padding: 10px; border: 1px solid #ddd;">Note</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${friend.transactions
-            .map(
-              (txn) => `
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;">${new Date(txn.date).toLocaleDateString("en-GB")}</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">₹${txn.amount}</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${txn.note}</td>
-            </tr>`
-            )
-            .join("")}
-        </tbody>
-      </table>
-      <div style="margin: 25px 0; text-align: center;">
-  <p style="font-size: 15px; margin-bottom: 10px;">
-    Scan to pay via UPI
-  </p>
-  <img
-    src="${qrImageUrl}"
-    alt="UPI QR Code"
-    width="200"
-    height="200"
-    style="border: 1px solid #ddd; border-radius: 8px;"
-  />
-  <p style="font-size: 12px; color: #666; margin-top: 8px;">
-    Works with Google Pay, PhonePe, Paytm, BHIM
-  </p>
-</div>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f14; padding:24px;">
+  <tr>
+    <td align="center">
+      <table width="600" cellpadding="0" cellspacing="0"
+        style="
+          background:#1a1a24;
+          border-radius:14px;
+          overflow:hidden;
+          font-family:Segoe UI, Arial, sans-serif;
+          box-shadow:0 10px 30px rgba(0,0,0,0.35);
+        "
+      >
 
-      <p style="margin-top:20px;">
-        Regards,<br/>
-        <strong>${user.name}</strong><br/>
-        <small>via YMoneyManager</small>
-      </p>
-      </div>
-  `;
+        <!-- HEADER -->
+        <tr>
+          <td
+            style="
+              padding:24px;
+              background:linear-gradient(90deg,#5a2ca0,#8b4df5);
+              color:#ffffff;
+            "
+          >
+            <h2 style="margin:0; font-size:22px;">Payment Reminder</h2>
+            <p style="margin:6px 0 0; font-size:13px; opacity:0.9;">
+              YMoneyManager
+            </p>
+          </td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td style="padding:24px; color:#eaeaf0;">
+
+            <p style="font-size:15px; margin-top:0;">
+              Hello <strong>${friend.name}</strong>,
+            </p>
+
+            <p style="font-size:14px; color:#cfcfe6;">
+              You owe me some money. Here are the details:
+            </p>
+
+            <!-- BALANCE -->
+            <table width="100%" cellpadding="0" cellspacing="0"
+              style="
+                margin:20px 0;
+                background:#12121a;
+                border-radius:12px;
+                border:1px solid #2a2a3d;
+              "
+            >
+              <tr>
+                <td align="center" style="padding:18px;">
+                  <p style="margin:0; font-size:13px; color:#9fa0c3;">
+                    Current Balance
+                  </p>
+                  <p
+                    style="
+                      margin:8px 0 0;
+                      font-size:30px;
+                      font-weight:600;
+                      color:${friend.balance >= 0 ? "#4cd964" : "#ff5c5c"};
+                    "
+                  >
+                    ₹${friend.balance}
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- TRANSACTIONS TABLE -->
+            <table width="100%" cellpadding="0" cellspacing="0"
+              style="
+                border-collapse:separate;
+                border-spacing:0;
+                background:#14141c;
+                border-radius:12px;
+                overflow:hidden;
+                margin-top:16px;
+              "
+            >
+              <thead>
+                <tr>
+                  <th
+                    style="
+                      padding:14px 16px;
+                      text-align:left;
+                      color:#ffffff;
+                      font-size:15px;
+                      font-weight:600;
+                      background:linear-gradient(90deg,#5a2ca0,#8b4df5);
+                    "
+                  >
+                    Date
+                  </th>
+                  <th
+                    style="
+                      padding:14px 16px;
+                      text-align:left;
+                      color:#ffffff;
+                      font-size:15px;
+                      font-weight:600;
+                      background:linear-gradient(90deg,#6a38b8,#9a5cff);
+                    "
+                  >
+                    Amount
+                  </th>
+                  <th
+                    style="
+                      padding:14px 16px;
+                      text-align:left;
+                      color:#ffffff;
+                      font-size:15px;
+                      font-weight:600;
+                      background:linear-gradient(90deg,#5a2ca0,#8b4df5);
+                    "
+                  >
+                    Note
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                ${(friend.transactions || []).map(txn => `
+                  <tr>
+                    <td
+                      style="
+                        padding:14px 16px;
+                        font-size:14px;
+                        color:#eaeaf0;
+                        border-bottom:1px solid #2a2a3d;
+                      "
+                    >
+                      ${new Date(txn.date).toLocaleDateString("en-GB")}
+                    </td>
+                    <td
+                      style="
+                        padding:14px 16px;
+                        font-size:14px;
+                        color:#ffffff;
+                        border-bottom:1px solid #2a2a3d;
+                      "
+                    >
+                      ₹${txn.amount}
+                    </td>
+                    <td
+                      style="
+                        padding:14px 16px;
+                        font-size:14px;
+                        color:#cfcfe6;
+                        border-bottom:1px solid #2a2a3d;
+                      "
+                    >
+                      ${txn.note}
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+
+            <!-- QR -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+              <tr>
+                <td align="center">
+                  <p style="font-size:14px; color:#cfcfe6; margin-bottom:10px;">
+                    Scan to pay via UPI
+                  </p>
+                  <img
+                    src="${qrImageUrl}"
+                    width="200"
+                    height="200"
+                    alt="UPI QR"
+                    style="border-radius:12px; border:2px solid #984bf7; padding:10px"
+                  />
+                  <p style="font-size:12px; color:#9fa0c3; margin-top:8px;">
+                    Google Pay • PhonePe • Paytm • BHIM
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- FOOTER TEXT -->
+            <p style="font-size:14px; color:#cfcfe6; margin-bottom:0;">
+              Regards,<br/>
+              <strong>${user.name}</strong>
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- FOOTER BAR -->
+        <tr>
+          <td
+            style="
+              background:#12121a;
+              padding:12px;
+              text-align:center;
+              font-size:12px;
+              color:#9fa0c3;
+            "
+          >
+            Sent via YMoneyManager
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+`;
+
 
   try {
     await axios.post(
@@ -119,60 +275,216 @@ router.post("/selected", async (req, res) => {
   // const totalSelectedBalance = selectedTransactions.reduce((sum, txn) => sum + txn.amount, 0);
 
   const htmlContent = `
-    <div style="font-family: 'Segoe UI', sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-      <h2 style="color: #7e5bef;">Hello ${friend.name},</h2>
-      <p style="font-size: 16px;">You owe me some money, so here's your account details:</p>
-      <div style="margin: 20px 0;">
-        <strong style="font-size: 18px;">Current Balance:</strong>
-        <p style="font-size: 24px; color: ${friend.balance >= 0 ? '#28a745' : '#dc3545'};">
-          ₹${friend.balance}
-        </p>
-      </div>
-      <h3 style="margin-bottom: 10px;">Details</h3>
-      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-        <thead>
-          <tr style="background-color: #f0f0f0;">
-            <th style="padding: 10px; border: 1px solid #ddd;">Date</th>
-            <th style="padding: 10px; border: 1px solid #ddd;">Amount</th>
-            <th style="padding: 10px; border: 1px solid #ddd;">Note</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${selectedTransactions
-            .map(
-              (txn) => `
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;">${new Date(txn.date).toLocaleDateString("en-GB")}</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">₹${txn.amount}</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${txn.note}</td>
-            </tr>`
-            )
-            .join("")}
-        </tbody>
-      </table>
-      <div style="margin: 25px 0; text-align: center;">
-  <p style="font-size: 15px; margin-bottom: 10px;">
-    Scan to pay via UPI
-  </p>
-  <img
-    src="${qrImageUrl}"
-    alt="UPI QR Code"
-    width="200"
-    height="200"
-    style="border: 1px solid #ddd; border-radius: 8px;"
-  />
-  <p style="font-size: 12px; color: #666; margin-top: 8px;">
-    Works with Google Pay, PhonePe, Paytm, BHIM
-  </p>
-</div>
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:24px;">
+  <tr>
+    <td align="center">
+      <table width="600" cellpadding="0" cellspacing="0"
+        style="
+          background:#1a1a24;
+          border-radius:14px;
+          overflow:hidden;
+          font-family:Segoe UI, Arial, sans-serif;
+          box-shadow:0 10px 30px rgba(0,0,0,0.35);
+        "
+      >
 
-      <p style="margin-top:20px;">
-        Regards,<br/>
-        <strong>${user.name}</strong><br/>
-        <small>via YMoneyManager</small>
-      </p>
-    </div>
-  `;
+        <!-- HEADER -->
+        <tr>
+          <td
+            style="
+              padding:24px;
+              background:linear-gradient(90deg,#5a2ca0,#8b4df5);
+              color:#ffffff;
+            "
+          >
+            <h2 style="margin:0; font-size:22px;">Payment Reminder</h2>
+            <p style="margin:6px 0 0; font-size:13px; opacity:0.9;">
+              YMoneyManager
+            </p>
+          </td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td style="padding:24px; color:#eaeaf0;">
+
+            <p style="font-size:15px; margin-top:0;">
+              Hello <strong>${friend.name}</strong>,
+            </p>
+
+            <p style="font-size:14px; color:#cfcfe6;">
+              You owe me some money. Here are the details:
+            </p>
+
+            <!-- BALANCE -->
+            <table width="100%" cellpadding="0" cellspacing="0"
+              style="
+                margin:20px 0;
+                background:#12121a;
+                border-radius:12px;
+                border:1px solid #2a2a3d;
+              "
+            >
+              <tr>
+                <td align="center" style="padding:18px;">
+                  <p style="margin:0; font-size:13px; color:#9fa0c3;">
+                    Current Balance
+                  </p>
+                  <p
+                    style="
+                      margin:8px 0 0;
+                      font-size:30px;
+                      font-weight:600;
+                      color:${friend.balance >= 0 ? "#4cd964" : "#ff5c5c"};
+                    "
+                  >
+                    ₹${friend.balance}
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- TRANSACTIONS TABLE -->
+            <table width="100%" cellpadding="0" cellspacing="0"
+              style="
+                border-collapse:separate;
+                border-spacing:0;
+                background:#14141c;
+                border-radius:12px;
+                overflow:hidden;
+                margin-top:16px;
+              "
+            >
+              <thead>
+                <tr>
+                  <th
+                    style="
+                      padding:14px 16px;
+                      text-align:left;
+                      color:#ffffff;
+                      font-size:15px;
+                      font-weight:600;
+                      background:linear-gradient(90deg,#5a2ca0,#8b4df5);
+                    "
+                  >
+                    Date
+                  </th>
+                  <th
+                    style="
+                      padding:14px 16px;
+                      text-align:left;
+                      color:#ffffff;
+                      font-size:15px;
+                      font-weight:600;
+                      background:linear-gradient(90deg,#6a38b8,#9a5cff);
+                    "
+                  >
+                    Amount
+                  </th>
+                  <th
+                    style="
+                      padding:14px 16px;
+                      text-align:left;
+                      color:#ffffff;
+                      font-size:15px;
+                      font-weight:600;
+                      background:linear-gradient(90deg,#5a2ca0,#8b4df5);
+                    "
+                  >
+                    Note
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                ${(friend.transactions || []).map(txn => `
+                  <tr>
+                    <td
+                      style="
+                        padding:14px 16px;
+                        font-size:14px;
+                        color:#eaeaf0;
+                        border-bottom:1px solid #2a2a3d;
+                      "
+                    >
+                      ${new Date(txn.date).toLocaleDateString("en-GB")}
+                    </td>
+                    <td
+                      style="
+                        padding:14px 16px;
+                        font-size:14px;
+                        color:#ffffff;
+                        border-bottom:1px solid #2a2a3d;
+                      "
+                    >
+                      ₹${txn.amount}
+                    </td>
+                    <td
+                      style="
+                        padding:14px 16px;
+                        font-size:14px;
+                        color:#cfcfe6;
+                        border-bottom:1px solid #2a2a3d;
+                      "
+                    >
+                      ${txn.note}
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+
+            <!-- QR -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+              <tr>
+                <td align="center">
+                  <p style="font-size:14px; color:#cfcfe6; margin-bottom:10px;">
+                    Scan to pay via UPI
+                  </p>
+                  <img
+                    src="${qrImageUrl}"
+                    width="200"
+                    height="200"
+                    alt="UPI QR"
+                    style="border-radius:12px; border:2px solid #984bf7; padding:10px"
+                  />
+                  <p style="font-size:12px; color:#9fa0c3; margin-top:8px;">
+                    Google Pay • PhonePe • Paytm • BHIM
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- FOOTER TEXT -->
+            <p style="font-size:14px; color:#cfcfe6; margin-bottom:0;">
+              Regards,<br/>
+              <strong>${user.name}</strong>
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- FOOTER BAR -->
+        <tr>
+          <td
+            style="
+              background:#12121a;
+              padding:12px;
+              text-align:center;
+              font-size:12px;
+              color:#9fa0c3;
+            "
+          >
+            Sent via YMoneyManager
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+`;
+
 
   try {
     await axios.post(
