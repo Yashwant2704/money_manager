@@ -217,7 +217,7 @@ router.post("/", async (req, res) => {
               color:#9fa0c3;
             "
           >
-            Sent via YMoneyManager
+            Sent via <a href="https://ymoneymanager.netlify.app">YMoneyManager</a>
           </td>
         </tr>
 
@@ -397,7 +397,7 @@ router.post("/selected", async (req, res) => {
               </thead>
 
               <tbody>
-                ${(friend.transactions || []).map(txn => `
+                ${(selectedTransactions || []).map(txn => `
                   <tr>
                     <td
                       style="
@@ -475,7 +475,7 @@ router.post("/selected", async (req, res) => {
               color:#9fa0c3;
             "
           >
-            Sent via YMoneyManager
+            Sent via <a href="https://ymoneymanager.netlify.app">YMoneyManager</a>
           </td>
         </tr>
 
