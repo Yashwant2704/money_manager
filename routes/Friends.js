@@ -106,14 +106,51 @@ router.post('/add', async (req, res) => {
   res.json(newFriend);
 });
 
-// Add/Subtract Money
+// // Add/Subtract Money
+// router.post('/transaction/:id', async (req, res) => {
+//   const { amount, note } = req.body;
+//   const friend = await Friend.findOne({ _id: req.params.id, user: req.user.id });
+//   if (!friend) return res.status(404).json({ message: 'Friend not found' });
+//   friend.balance += amount;
+//   friend.transactions.push({ amount, note });
+//   await friend.save();
+//   res.json(friend);
+// });
+
+// Add/Subtract Money (single or multiple)
 router.post('/transaction/:id', async (req, res) => {
-  const { amount, note } = req.body;
-  const friend = await Friend.findOne({ _id: req.params.id, user: req.user.id });
-  if (!friend) return res.status(404).json({ message: 'Friend not found' });
-  friend.balance += amount;
-  friend.transactions.push({ amount, note });
+  let { amount, note, transactions } = req.body;
+
+  const friend = await Friend.findOne({
+    _id: req.params.id,
+    user: req.user.id
+  });
+
+  if (!friend) {
+    return res.status(404).json({ message: 'Friend not found' });
+  }
+
+  // If multiple transactions sent
+  if (transactions && Array.isArray(transactions)) {
+    transactions.forEach((t) => {
+      friend.balance += t.amount;
+      friend.transactions.push({
+        amount: t.amount,
+        note: t.note
+      });
+    });
+  } 
+  // If single transaction sent
+  else if (amount) {
+    friend.balance += amount;
+    friend.transactions.push({
+      amount,
+      note
+    });
+  }
+
   await friend.save();
+
   res.json(friend);
 });
 
