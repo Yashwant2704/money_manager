@@ -18,6 +18,8 @@ const authRoutes = require('./routes/auth');
 const adminFriendsRoutes = require('./routes/AdminFriends');
 const adminImpersonationRoutes = require('./routes/AdminImpersonation');
 const passwordResetRoutes = require('./routes/passwordReset');
+const payRoutes = require("./routes/pay");
+const profileRoutes = require("./routes/profile");
 
 app.use('/api/friends', friendRoutes);
 app.use('/api/auth', authRoutes);
@@ -25,8 +27,8 @@ app.use('/api/admin', adminFriendsRoutes);
 app.use('/api/admin', require('./routes/AdminUsers'));
 app.use('/api/admin', adminImpersonationRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
-const payRoutes = require("./routes/pay");
 app.use("/api", payRoutes);
+app.use("/api/profile", profileRoutes);
 // add once
 app.post("/api/client-log", express.json(), (req, res) => {
   console.log("[CLIENT-LOG]", req.body);

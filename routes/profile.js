@@ -2,7 +2,8 @@ const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const express = require("express");
 const router = express.Router();
-const User = require('../models/Friend'); // Update path if needed
+const User = require('../models/User'); // Update path if needed
+const auth = require('../middleware/auth');
 
 // Configure cloudinary
 cloudinary.config({
@@ -40,3 +41,18 @@ router.get('/profile/qr', auth, async (req, res) => {
   }
   res.json({ qrCodeUrl: user.qrCodeUrl });
 });
+
+// Update UPI ID
+router.put("/users/upi", auth, async (req, res) => {
+  const { upiId } = req.body;
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { upiId },
+    { new: true }
+  );
+
+  res.json(user);
+});
+
+module.exports = router;
