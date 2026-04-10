@@ -35,4 +35,8 @@ router.post('/login', async (req, res) => {
     }});
 });
 
+router.all('*', (req, res) => {
+  res.status(405).json({ message: 'Method Not Allowed' });
+});
+
 module.exports = router;

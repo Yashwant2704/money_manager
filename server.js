@@ -20,6 +20,7 @@ const adminImpersonationRoutes = require('./routes/AdminImpersonation');
 const passwordResetRoutes = require('./routes/passwordReset');
 const payRoutes = require("./routes/pay");
 const profileRoutes = require("./routes/profile");
+const emailRoute = require("./routes/email");
 
 app.use('/api/friends', friendRoutes);
 app.use('/api/auth', authRoutes);
@@ -34,9 +35,6 @@ app.post("/api/client-log", express.json(), (req, res) => {
   console.log("[CLIENT-LOG]", req.body);
   res.sendStatus(204);
 });
-
-
-const emailRoute = require("./routes/email");
 app.use("/api/email", emailRoute);
 
 const PORT = process.env.PORT || 5000;
