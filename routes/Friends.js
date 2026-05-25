@@ -238,26 +238,42 @@ router.delete('/transaction/:id', async (req, res) => {
 
     const txn = friend.transactions.id(req.params.id);
     if (!txn) return res.status(404).json({ message: 'Transaction not found' });
-    sharedId = txn.sharedId;
+
+    // Always declare variables with const/let! 
+    const sharedId = txn.sharedId; 
+
+    // 1. Adjust the balance for the single transaction being removed
     friend.balance -= txn.amount;
-    friend.transactions = friend.transactions.filter(
-      t => t.sharedId !== sharedId
-    );
-    await friend.save();
 
-    const mirrorFriend = await Friend.findOne({
-      user: { $ne: req.user.id },
-      'transactions.sharedId': sharedId
-    });
-
-    if (mirrorFriend) {
-      mirrorFriend.transactions = mirrorFriend.transactions.filter(
+    // 2. Safely remove the transaction
+    if (sharedId) {
+      // If it's a newer transaction with a sharedId, remove all parts of it
+      friend.transactions = friend.transactions.filter(
         t => t.sharedId !== sharedId
       );
-      await mirrorFriend.save();
+    } else {
+      // LEGACY FIX: If it has no sharedId, ONLY remove this specific transaction by its _id
+      friend.transactions.pull(req.params.id); 
     }
 
-    res.json({ message: 'Transaction deleted from both sides' });
+    await friend.save();
+
+    // 3. Handle the mirror friend (Only if a sharedId exists)
+    if (sharedId) {
+      const mirrorFriend = await Friend.findOne({
+        user: { $ne: req.user.id },
+        'transactions.sharedId': sharedId
+      });
+
+      if (mirrorFriend) {
+        mirrorFriend.transactions = mirrorFriend.transactions.filter(
+          t => t.sharedId !== sharedId
+        );
+        await mirrorFriend.save();
+      }
+    }
+
+    res.json({ message: 'Transaction deleted successfully' });
 
   } catch (error) {
     console.error(error);
