@@ -6,7 +6,8 @@ const transactionSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
   mirrored: { type: Boolean, default: false },
   addedBy: { type: String, default: "" },
-  sharedId: { type: String, default: null }
+  sharedId: { type: String, default: null },
+  isDeleted: { type: Boolean, default: false }
 });
 
 const friendSchema = new mongoose.Schema({

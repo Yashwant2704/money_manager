@@ -121,6 +121,7 @@ router.get('/:id', async (req, res) => {
     const friend = await Friend.findOne({ _id: req.params.id, user: req.user.id })
       .populate('user', 'username email').lean(); // Populate user with selected fields
     if (!friend) return res.status(404).json({ message: 'Friend not found' });
+    friend.transactions = friend.transactions.filter(t => t.isDeleted !== true);
     res.json(friend);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -237,28 +238,20 @@ router.delete('/transaction/:id', async (req, res) => {
     if (!friend) return res.status(404).json({ message: 'Transaction not found' });
 
     const txn = friend.transactions.id(req.params.id);
-    if (!txn) return res.status(404).json({ message: 'Transaction not found' });
-
-    // Always declare variables with const/let! 
-    const sharedId = txn.sharedId; 
-
-    // 1. Adjust the balance for the single transaction being removed
-    friend.balance -= txn.amount;
-
-    // 2. Safely remove the transaction
-    if (sharedId) {
-      // If it's a newer transaction with a sharedId, remove all parts of it
-      friend.transactions = friend.transactions.filter(
-        t => t.sharedId !== sharedId
-      );
-    } else {
-      // LEGACY FIX: If it has no sharedId, ONLY remove this specific transaction by its _id
-      friend.transactions.pull(req.params.id); 
+    
+    // Prevent double-deleting
+    if (!txn || txn.isDeleted) {
+      return res.status(400).json({ message: 'Transaction already deleted or not found' });
     }
 
+    const sharedId = txn.sharedId;
+
+    // 1. Soft delete on your side & adjust balance
+    txn.isDeleted = true;
+    friend.balance -= txn.amount;
     await friend.save();
 
-    // 3. Handle the mirror friend (Only if a sharedId exists)
+    // 2. Soft delete on the friend's side (if shared)
     if (sharedId) {
       const mirrorFriend = await Friend.findOne({
         user: { $ne: req.user.id },
@@ -266,20 +259,101 @@ router.delete('/transaction/:id', async (req, res) => {
       });
 
       if (mirrorFriend) {
-        mirrorFriend.transactions = mirrorFriend.transactions.filter(
-          t => t.sharedId !== sharedId
-        );
-        await mirrorFriend.save();
+        const mirrorTxn = mirrorFriend.transactions.find(t => t.sharedId === sharedId);
+        if (mirrorTxn && !mirrorTxn.isDeleted) {
+          mirrorTxn.isDeleted = true;
+          // Notice we subtract the amount here too to keep balances perfectly synced
+          mirrorFriend.balance -= mirrorTxn.amount; 
+          await mirrorFriend.save();
+        }
       }
     }
 
-    res.json({ message: 'Transaction deleted successfully' });
+    res.json({ message: 'Transaction moved to trash', balance: friend.balance });
 
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+
+// GET /transactions/trash - Get all deleted transactions for all friends
+router.get('/transactions/trash', async (req, res) => {
+  try {
+    const friends = await Friend.find({ user: req.user.id }).lean();
+    
+    let trashedTransactions = [];
+
+    friends.forEach(friend => {
+      const deletedOnly = friend.transactions.filter(t => t.isDeleted === true);
+      
+      if (deletedOnly.length > 0) {
+        trashedTransactions.push({
+          friendId: friend._id,
+          friendName: friend.name,
+          deletedTransactions: deletedOnly
+        });
+      }
+    });
+
+    res.json(trashedTransactions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+// PUT /transaction/recover/:id
+router.put('/transaction/recover/:id', async (req, res) => {
+  try {
+    const friend = await Friend.findOne({
+      'transactions._id': req.params.id,
+      user: req.user.id
+    });
+
+    if (!friend) return res.status(404).json({ message: 'Transaction not found' });
+
+    const txn = friend.transactions.id(req.params.id);
+    
+    // Ensure it's actually deleted before trying to recover
+    if (!txn || !txn.isDeleted) {
+      return res.status(400).json({ message: 'Transaction is not in the trash' });
+    }
+
+    const sharedId = txn.sharedId;
+
+    // 1. Recover on your side & restore balance
+    txn.isDeleted = false;
+    friend.balance += txn.amount; // Add the money back
+    await friend.save();
+
+    // 2. Recover on the friend's side (if shared)
+    if (sharedId) {
+      const mirrorFriend = await Friend.findOne({
+        user: { $ne: req.user.id },
+        'transactions.sharedId': sharedId
+      });
+
+      if (mirrorFriend) {
+        const mirrorTxn = mirrorFriend.transactions.find(t => t.sharedId === sharedId);
+        if (mirrorTxn && mirrorTxn.isDeleted) {
+          mirrorTxn.isDeleted = false;
+          mirrorFriend.balance += mirrorTxn.amount; // Add the money back for them too
+          await mirrorFriend.save();
+        }
+      }
+    }
+
+    res.json({ message: 'Transaction recovered successfully', balance: friend.balance });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 router.put('/transaction/:id', async (req, res) => {
   try {
