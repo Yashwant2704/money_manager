@@ -21,6 +21,7 @@ const passwordResetRoutes = require('./routes/passwordReset');
 const payRoutes = require("./routes/pay");
 const profileRoutes = require("./routes/profile");
 const emailRoute = require("./routes/email");
+const groupRoutes = require("./routes/Groups");
 
 app.use('/api/friends', friendRoutes);
 app.use('/api/auth', authRoutes);
@@ -36,6 +37,7 @@ app.post("/api/client-log", express.json(), (req, res) => {
   res.sendStatus(204);
 });
 app.use("/api/email", emailRoute);
+app.use("/api/groups", groupRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
