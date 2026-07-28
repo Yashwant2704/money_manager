@@ -1,43 +1,66 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-require('dotenv').config();
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+require("dotenv").config();
 
 const app = express();
+
 app.use(cors());
 app.use(bodyParser.json());
 
-mongoose.connect(process.env.MONGO_URI, {  })
-  .then(() => console.log('MongoDB connected successfully'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// Uncomment for debugging if needed
+// mongoose.set("debug", true);
 
-// Auth and friends routes
-const friendRoutes = require('./routes/Friends');
-const authRoutes = require('./routes/auth');
-const adminFriendsRoutes = require('./routes/AdminFriends');
-const adminImpersonationRoutes = require('./routes/AdminImpersonation');
-const passwordResetRoutes = require('./routes/passwordReset');
-const payRoutes = require("./routes/pay");
-const profileRoutes = require("./routes/profile");
-const emailRoute = require("./routes/email");
-const groupRoutes = require("./routes/Groups");
+// Routes
+app.use("/api/friends", require("./routes/Friends"));
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/admin", require("./routes/AdminFriends"));
+app.use("/api/admin", require("./routes/AdminUsers"));
+app.use("/api/admin", require("./routes/AdminImpersonation"));
+app.use("/api/password-reset", require("./routes/passwordReset"));
+app.use("/api", require("./routes/pay"));
+app.use("/api/profile", require("./routes/profile"));
+app.use("/api/email", require("./routes/email"));
+app.use("/api/groups", require("./routes/Groups"));
 
-app.use('/api/friends', friendRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminFriendsRoutes);
-app.use('/api/admin', require('./routes/AdminUsers'));
-app.use('/api/admin', adminImpersonationRoutes);
-app.use('/api/password-reset', passwordResetRoutes);
-app.use("/api", payRoutes);
-app.use("/api/profile", profileRoutes);
-// add once
 app.post("/api/client-log", express.json(), (req, res) => {
-  console.log("[CLIENT-LOG]", req.body);
-  res.sendStatus(204);
+    console.log("[CLIENT-LOG]", req.body);
+    res.sendStatus(204);
 });
-app.use("/api/email", emailRoute);
-app.use("/api/groups", groupRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+async function startServer() {
+    try {
+        // console.time("MongoDB Connect");
+
+        await mongoose.connect(process.env.MONGO_URI);
+
+        // console.timeEnd("MongoDB Connect");
+        console.log("MongoDB connected successfully");
+
+        // console.time("MongoDB Ping");
+        await mongoose.connection.db.admin().ping();
+        // console.timeEnd("MongoDB Ping");
+
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+
+        mongoose.connection.on("error", (err) => {
+            console.error("MongoDB Error:", err);
+        });
+
+        mongoose.connection.on("disconnected", () => {
+            console.warn("MongoDB disconnected");
+        });
+
+    } catch (err) {
+        console.error("Failed to connect to MongoDB");
+        console.error(err);
+        process.exit(1);
+    }
+}
+
+startServer();

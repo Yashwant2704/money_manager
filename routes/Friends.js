@@ -8,6 +8,7 @@ router.use(auth);
 
 // Get all friends (of one user)
 router.get('/', async (req, res) => {
+  // console.time("db");
   const friends = await Friend.aggregate([
     { $match: { user: new mongoose.Types.ObjectId(req.user.id) } },
     {
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
       }
     }
   ]);
-
+  // console.timeEnd("db");
   res.json(friends);
 });
 
@@ -118,8 +119,10 @@ router.post('/transaction/split', async (req, res) => {
 // Get one friend by id
 router.get('/:id', async (req, res) => {
   try {
+    // console.time("db - get single friend");
     const friend = await Friend.findOne({ _id: req.params.id, user: req.user.id })
       .populate('user', 'username email').lean(); // Populate user with selected fields
+      // console.timeEnd("db - get single friend");
     if (!friend) return res.status(404).json({ message: 'Friend not found' });
     friend.transactions = friend.transactions.filter(t => t.isDeleted !== true);
     res.json(friend);
