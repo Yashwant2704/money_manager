@@ -31,36 +31,23 @@ app.post("/api/client-log", express.json(), (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-async function startServer() {
-    try {
-        // console.time("MongoDB Connect");
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB connected successfully");
 
-        await mongoose.connect(process.env.MONGO_URI);
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+    process.exit(1);
+  });
 
-        // console.timeEnd("MongoDB Connect");
-        console.log("MongoDB connected successfully");
+mongoose.connection.on("error", (err) => {
+  console.error("MongoDB Error:", err);
+});
 
-        // console.time("MongoDB Ping");
-        await mongoose.connection.db.admin().ping();
-        // console.timeEnd("MongoDB Ping");
-
-        app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-        });
-
-        mongoose.connection.on("error", (err) => {
-            console.error("MongoDB Error:", err);
-        });
-
-        mongoose.connection.on("disconnected", () => {
-            console.warn("MongoDB disconnected");
-        });
-
-    } catch (err) {
-        console.error("Failed to connect to MongoDB");
-        console.error(err);
-        process.exit(1);
-    }
-}
-
-startServer();
+mongoose.connection.on("disconnected", () => {
+  console.warn("MongoDB disconnected");
+});
